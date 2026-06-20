@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Hub & Tweet Composer</title>
+    <meta name="description" content="View Google Cloud BigQuery Release Notes, filter through updates, and instantly draft and share tweets about features, fixes, and announcements.">
+    <!-- Google Fonts: Outfit (headings) and Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation / Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#grad-cyan-indigo)" />
+                        <path d="M2 17L12 22L22 17" stroke="url(#grad-cyan-indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M2 12L12 17L22 12" stroke="url(#grad-cyan-indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="grad-cyan-indigo" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#06b6d4" />
+                                <stop offset="1" stop-color="#6366f1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="title-container">
+                    <h1>BigQuery Release Notes Hub</h1>
+                    <p class="subtitle">Stay updated with Google Cloud BigQuery releases and share them with the community.</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div id="connection-status" class="status-badge connected">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connected</span>
+                </div>
+                <button id="refresh-btn" class="btn btn-primary" title="Refresh Release Notes">
+                    <i data-lucide="refresh-cw" class="icon-spin-target"></i>
+                    <span>Refresh Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Layout -->
+        <main class="app-main">
+            <!-- Left Panel: Release Notes Feed -->
+            <section class="feed-section">
+                <!-- Filters & Controls Bar -->
+                <div class="controls-card">
+                    <div class="search-wrapper">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search release notes (e.g. 'Gemini', 'partition', 'JSON')..." aria-label="Search release notes">
+                        <button id="clear-search-btn" class="clear-btn" style="display: none;" title="Clear search">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="filters-container">
+                        <span class="filter-label">Filter by type:</span>
+                        <div class="filter-tags" role="group" aria-label="Filter release notes by category">
+                            <button id="filter-all" class="filter-btn active" data-type="all">All</button>
+                            <button id="filter-feature" class="filter-btn" data-type="Feature">Features</button>
+                            <button id="filter-fix" class="filter-btn" data-type="Fix">Fixes</button>
+                            <button id="filter-issue" class="filter-btn" data-type="Issue">Issues</button>
+                            <button id="filter-announcement" class="filter-btn" data-type="Announcement">Announcements</button>
+                            <button id="filter-changed" class="filter-btn" data-type="Changed">Changes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Content Area -->
+                <div class="feed-container">
+                    <div class="feed-header">
+                        <div id="feed-meta" class="feed-meta">Loading releases...</div>
+                        <div class="feed-view-controls">
+                            <span class="view-label">Sort:</span>
+                            <select id="sort-select" class="select-input">
+                                <option value="desc">Newest First</option>
+                                <option value="asc">Oldest First</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading Shimmer State -->
+                    <div id="feed-loading" class="shimmer-container">
+                        <div class="shimmer-card"></div>
+                        <div class="shimmer-card"></div>
+                        <div class="shimmer-card"></div>
+                    </div>
+
+                    <!-- Actual Releases List -->
+                    <div id="releases-list" class="releases-list">
+                        <!-- Filled dynamically by JavaScript -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="feed-empty" class="empty-state" style="display: none;">
+                        <div class="empty-icon-container">
+                            <i data-lucide="search-code" class="empty-icon"></i>
+                        </div>
+                        <h3>No release notes found</h3>
+                        <p>No results match your search query or filter tags. Try adjusting your keywords or selecting another filter category.</p>
+                        <button id="reset-filters-btn" class="btn btn-secondary">Reset Filters</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Sticky Tweet Composer -->
+            <aside class="composer-section">
+                <div class="composer-card-wrapper">
+                    <div class="composer-card">
+                        <div class="composer-header">
+                            <div class="composer-title">
+                                <i data-lucide="twitter" class="twitter-icon"></i>
+                                <h2>Tweet Composer</h2>
+                            </div>
+                            <span class="composer-badge">Step 2: Share</span>
+                        </div>
+                        
+                        <!-- Formatted Preview Context -->
+                        <div class="composer-body">
+                            <!-- Card Picker State (Show when no release is selected) -->
+                            <div id="composer-empty-state" class="composer-placeholder">
+                                <div class="placeholder-art">
+                                    <i data-lucide="mouse-pointer-click" class="pulse-icon"></i>
+                                </div>
+                                <h3>No Update Selected</h3>
+                                <p>Select any release note from the feed on the left to instantly load it into the tweet composer.</p>
+                            </div>
+
+                            <!-- Real Composer Content -->
+                            <div id="composer-content" class="composer-form" style="display: none;">
+                                <div class="selected-meta">
+                                    <div class="meta-label">Selected Release:</div>
+                                    <div class="meta-details">
+                                        <span id="selected-type-badge" class="badge">Feature</span>
+                                        <span id="selected-date" class="date-text">June 17, 2026</span>
+                                    </div>
+                                </div>
+
+                                <!-- Simulated Tweet Box -->
+                                <div class="tweet-box-container">
+                                    <div class="tweet-box-header">
+                                        <div class="tweet-avatar">BQ</div>
+                                        <div class="tweet-user">
+                                            <span class="user-name">Google BigQuery Hub</span>
+                                            <span class="user-handle">@BigQueryRelease</span>
+                                        </div>
+                                    </div>
+                                    <div class="tweet-editor-wrapper">
+                                        <textarea id="tweet-textarea" class="tweet-textarea" placeholder="What's happening?" aria-label="Tweet text content"></textarea>
+                                    </div>
+                                    
+                                    <!-- Tweet Preview Attachment (simulates the release card) -->
+                                    <div class="tweet-attachment-preview">
+                                        <div class="attachment-domain">cloud.google.com</div>
+                                        <div class="attachment-title">BigQuery Release Notes</div>
+                                        <div class="attachment-desc">Read the full official changelog on the Google Cloud Platform.</div>
+                                    </div>
+                                    
+                                    <div class="tweet-box-footer">
+                                        <!-- Left: formatting tools -->
+                                        <div class="composer-helpers">
+                                            <button id="btn-hash-bq" class="helper-badge" title="Add #BigQuery hashtag">#BigQuery</button>
+                                            <button id="btn-hash-gcp" class="helper-badge" title="Add #GoogleCloud hashtag">#GoogleCloud</button>
+                                            <button id="btn-reset-text" class="helper-badge btn-reset" title="Reset to default text">Reset Draft</button>
+                                        </div>
+                                        
+                                        <!-- Right: Char Counter & Action Button -->
+                                        <div class="composer-actions">
+                                            <div class="char-count-wrapper">
+                                                <svg class="progress-ring" width="24" height="24">
+                                                    <circle class="progress-ring-bg" stroke="#1f2937" stroke-width="2" fill="transparent" r="10" cx="12" cy="12" />
+                                                    <circle id="progress-ring-bar" class="progress-ring-bar" stroke="#0ea5e9" stroke-width="2" fill="transparent" r="10" cx="12" cy="12" />
+                                                </svg>
+                                                <span id="char-counter" class="char-counter">280</span>
+                                            </div>
+                                            <button id="tweet-btn" class="btn btn-tweet" title="Share Draft on Twitter/X">
+                                                <i data-lucide="external-link"></i>
+                                                <span>Post to X</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="composer-tips">
+                                    <div class="tip-title">
+                                        <i data-lucide="info" class="tip-icon"></i>
+                                        <span>Pro Tip</span>
+                                    </div>
+                                    <p>URLs in tweets are automatically shortened by Twitter to 23 characters. Our counter handles this adjustment automatically!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+        
+        <!-- Bottom Floating Bar for Mobile (Quick Action to view/hide composer) -->
+        <div id="mobile-composer-trigger" class="mobile-composer-trigger" style="display: none;">
+            <div class="mobile-trigger-content">
+                <i data-lucide="twitter" class="twitter-icon-small"></i>
+                <span id="mobile-trigger-text">No update selected</span>
+            </div>
+            <button id="mobile-trigger-btn" class="btn btn-tweet btn-sm" disabled>View Draft</button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 BigQuery Release Notes Hub. Powered by Flask, Vanilla HTML, JS &amp; CSS. All release contents belong to Google Cloud Platform.</p>
+        </footer>
+    </div>
+
+    <!-- Main Application Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
