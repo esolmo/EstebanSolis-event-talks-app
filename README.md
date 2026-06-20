@@ -12,9 +12,11 @@ Una aplicación web moderna construida con **Python Flask** en el backend y **HT
    - **Corrección de longitud de enlaces**: Calcula correctamente la longitud de los enlaces de acuerdo a las reglas de Twitter (cualquier enlace HTTP/HTTPS se cuenta exactamente como 23 caracteres).
    - **Anillo de progreso SVG**: Un contador circular que cambia de color dinámicamente de azul (seguro) a amarillo (advertencia) y rojo (límite excedido).
    - Integración directa con **Twitter Web Intent** para abrir la ventana oficial de compartición de Twitter sin necesidad de configurar APIs complejas o credenciales OAuth.
-3. **Caché en Memoria Inteligente**: Almacena en caché los datos del feed durante 5 minutos para evitar peticiones repetitivas innecesarias a los servidores de Google, con opción de forzar la recarga desde la interfaz.
-4. **Diseño Visual Premium**: Interfaz responsive construida sobre una paleta oscura basada en los colores de Google Cloud (tonos pizarra y azul cian), con efectos de elevación, animaciones suaves y cargadores tipo *shimmer skeleton* durante la obtención de datos.
-5. **Independencia de Dependencias Complejas**: Todo el sistema de parseo se gestiona con librerías nativas de Python (`xml.etree.ElementTree` y `urllib.request`).
+3. **Copiado Rápido al Portapapeles**: Cada tarjeta de actualización incluye un botón "Copy" que copia instantáneamente el texto limpio de la nota de lanzamiento (sin tags HTML ni metadatos de tweets), con un estado visual de confirmación temporal ("Copied!") tras el éxito del copiado.
+4. **Exportación Flexible a CSV**: Un botón global "Export CSV" en los controles del feed permite descargar en lote las notas visibles en ese momento, respetando los filtros por categoría y búsquedas textuales activos. El archivo CSV generado cumple con el estándar RFC 4180 (campos entrecomillados y comillas internas correctamente escapadas).
+5. **Caché en Memoria Inteligente**: Almacena en caché los datos del feed durante 5 minutos para evitar peticiones repetitivas innecesarias a los servidores de Google, con opción de forzar la recarga desde la interfaz.
+6. **Diseño Visual Premium**: Interfaz responsive construida sobre una paleta oscura basada en los colores de Google Cloud (tonos pizarra y azul cian), con efectos de elevación, animaciones suaves y cargadores tipo *shimmer skeleton* durante la obtención de datos.
+7. **Independencia de Dependencias Complejas**: Todo el sistema de parseo se gestiona con librerías nativas de Python (`xml.etree.ElementTree` y `urllib.request`).
 
 ---
 

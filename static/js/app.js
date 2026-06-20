@@ -25,6 +25,7 @@ const feedEmpty = document.getElementById('feed-empty');
 const releasesList = document.getElementById('releases-list');
 const resetFiltersBtn = document.getElementById('reset-filters-btn');
 const connectionStatus = document.getElementById('connection-status');
+const exportCsvBtn = document.getElementById('export-csv-btn');
 
 // Composer DOM Elements
 const composerEmptyState = document.getElementById('composer-empty-state');
@@ -104,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileTriggerBtn.addEventListener('click', () => {
         document.querySelector('.composer-section').scrollIntoView({ behavior: 'smooth' });
     });
+
+    // Export Action
+    exportCsvBtn.addEventListener('click', exportToCSV);
 
     // Handle mobile responsiveness check
     handleResponsiveLayout();
@@ -212,12 +216,9 @@ function clearSearch() {
 }
 
 /**
- * Renders release cards based on search, filter, and sort
+ * Helper to filter and sort releases based on active GUI state
  */
-function renderReleases() {
-    if (state.isLoading) return;
-    
-    // 1. Filter releases
+function getFilteredAndSortedReleases() {
     let filtered = state.releases.filter(item => {
         // Category filter
         if (state.activeFilter !== 'all' && item.type.toLowerCase() !== state.activeFilter.toLowerCase()) {
@@ -235,17 +236,28 @@ function renderReleases() {
         return true;
     });
 
-    // 2. Sort releases (based on original array position or ISO date)
+    // Sort releases (based on original array position or ISO date)
     filtered.sort((a, b) => {
         const dateA = new Date(a.iso_date || a.date);
         const dateB = new Date(b.iso_date || b.date);
         return state.sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
 
-    // 3. Update result meta text
+    return filtered;
+}
+
+/**
+ * Renders release cards based on search, filter, and sort
+ */
+function renderReleases() {
+    if (state.isLoading) return;
+    
+    const filtered = getFilteredAndSortedReleases();
+
+    // Update result meta text
     feedMeta.textContent = `Showing ${filtered.length} of ${state.releases.length} updates`;
 
-    // 4. Render cards
+    // Render cards
     releasesList.innerHTML = '';
     
     if (filtered.length === 0) {
@@ -279,6 +291,10 @@ function renderReleases() {
                 ${item.html_content}
             </div>
             <div class="card-actions-row">
+                <button class="btn-card-copy" onclick="handleCardCopyClick(event, '${item.id}', this)" title="Copy description to clipboard">
+                    <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                    <span>Copy</span>
+                </button>
                 <button class="btn btn-card-tweet" onclick="handleCardTweetClick(event, '${item.id}')">
                     <i data-lucide="twitter" style="width: 14px; height: 14px;"></i>
                     <span>${isSelected ? 'Selected for Draft' : 'Draft Tweet'}</span>
@@ -289,7 +305,7 @@ function renderReleases() {
         // Clicking anywhere on the card selects it
         card.addEventListener('click', (e) => {
             // Avoid selecting if clicking a link or button directly
-            if (e.target.tagName.toLowerCase() === 'a' || e.target.closest('.btn-card-tweet')) {
+            if (e.target.tagName.toLowerCase() === 'a' || e.target.closest('.btn-card-tweet') || e.target.closest('.btn-card-copy')) {
                 return;
             }
             selectRelease(item);
@@ -520,4 +536,92 @@ function handleResponsiveLayout() {
     } else {
         mobileComposerTrigger.style.display = 'none';
     }
+}
+
+/**
+ * Handles clicking the copy button on a card.
+ * Copies the clean description text directly to the clipboard.
+ */
+function handleCardCopyClick(event, releaseId, buttonEl) {
+    event.stopPropagation(); // Prevent card selection from firing
+    
+    const release = state.releases.find(r => r.id === releaseId);
+    if (!release) return;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(release.text_content).then(() => {
+        // Change button state to "copied"
+        buttonEl.classList.add('copied');
+        const icon = buttonEl.querySelector('i');
+        const textSpan = buttonEl.querySelector('span');
+        
+        // Save current icon and text
+        const originalIconName = icon.getAttribute('data-lucide');
+        const originalText = textSpan.textContent;
+        
+        // Update to success state
+        icon.setAttribute('data-lucide', 'check');
+        textSpan.textContent = 'Copied!';
+        
+        // Re-render the specific icon
+        lucide.createIcons();
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+            buttonEl.classList.remove('copied');
+            icon.setAttribute('data-lucide', originalIconName);
+            textSpan.textContent = originalText;
+            lucide.createIcons();
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('Could not copy to clipboard. Please copy manually.');
+    });
+}
+
+/**
+ * Exports the currently filtered and sorted releases to a CSV file (RFC 4180 compliant)
+ */
+function exportToCSV() {
+    const list = getFilteredAndSortedReleases();
+    if (list.length === 0) {
+        alert('No data to export.');
+        return;
+    }
+    
+    // CSV Header
+    const headers = ['ID', 'Date', 'Type', 'Link', 'Content'];
+    
+    // Format rows (each field quoted, double quotes escaped as double-double-quotes)
+    const rows = list.map(item => {
+        return [
+            `"${item.id}"`,
+            `"${item.date.replace(/"/g, '""')}"`,
+            `"${item.type.replace(/"/g, '""')}"`,
+            `"${item.link.replace(/"/g, '""')}"`,
+            `"${item.text_content.replace(/"/g, '""')}"`
+        ];
+    });
+    
+    // Assemble CSV content
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    // Create blob and download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    link.setAttribute('href', url);
+    
+    // Generate readable filename
+    const filterSuffix = state.activeFilter !== 'all' ? `_${state.activeFilter.toLowerCase()}` : '';
+    link.setAttribute('download', `bigquery_releases${filterSuffix}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }

@@ -248,6 +248,13 @@ body {
     border-color: var(--border-color-light);
 }
 
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    border-radius: var(--radius-md);
+    gap: 0.35rem;
+}
+
 .btn-tweet {
     background: var(--color-twitter);
     color: white;
@@ -631,6 +638,7 @@ body {
     border-top: 1px solid rgba(55, 65, 81, 0.5);
     padding-top: 0.85rem;
     margin-top: 0.25rem;
+    gap: 0.5rem;
 }
 
 .btn-card-tweet {
@@ -655,6 +663,32 @@ body {
 }
 .release-card.selected .btn-card-tweet:hover {
     background: var(--color-twitter-hover);
+}
+
+.btn-card-copy {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-card-copy:hover {
+    background: rgba(31, 41, 55, 0.6);
+    color: var(--text-primary);
+    border-color: var(--border-color-light);
+}
+
+.btn-card-copy.copied {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border-color: #059669;
 }
 
 /* Empty State Styling */
